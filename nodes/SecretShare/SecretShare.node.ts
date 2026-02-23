@@ -5,7 +5,7 @@ import type {
     INodeType,
     INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
+import { NodeConnectionTypes, NodeOperationError, ApplicationError } from 'n8n-workflow';
 import * as crypto from 'crypto';
 
 export class SecretShare implements INodeType {
@@ -95,7 +95,7 @@ export class SecretShare implements INodeType {
         const key = this.deriveKey(passphrase);
         const data = Buffer.from(payloadB64, 'base64');
         if (data.length < 12 + 16) {
-            throw new Error('Invalid payload: too short');
+            throw new ApplicationError('Invalid payload: too short');
         }
         const iv = data.slice(0, 12);
         const authTag = data.slice(12, 28);
@@ -116,7 +116,7 @@ export class SecretShare implements INodeType {
                 const passphrase = (this.getNodeParameter('passphrase', itemIndex, '') as string) || '';
 
                 if (!passphrase) {
-                    throw new Error('Passphrase is required');
+                    throw new NodeOperationError(this.getNode(), new Error('Passphrase is required'), { itemIndex });
                 }
 
                 if (operation === 'encrypt') {
