@@ -97,7 +97,6 @@ export class SecretShare implements INodeType {
         if (data.length < 12 + 16) {
             throw new Error('Invalid payload: too short');
         }
-        }
         const iv = data.slice(0, 12);
         const authTag = data.slice(12, 28);
         const ciphertext = data.slice(28);
