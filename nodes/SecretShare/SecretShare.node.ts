@@ -18,6 +18,7 @@ export class SecretShare implements INodeType {
         defaults: {
             name: 'SecretShare',
         },
+        usableAsTool: true,
         inputs: [NodeConnectionTypes.Main],
         outputs: [NodeConnectionTypes.Main],
         properties: [
@@ -25,6 +26,7 @@ export class SecretShare implements INodeType {
                 displayName: 'Operation',
                 name: 'operation',
                 type: 'options',
+                noDataExpression: true,
                 options: [
                     { name: 'Encrypt', value: 'encrypt' },
                     { name: 'Decrypt', value: 'decrypt' },
@@ -36,6 +38,9 @@ export class SecretShare implements INodeType {
                 displayName: 'Secret',
                 name: 'secret',
                 type: 'string',
+                typeOptions: {
+                    password: true,
+                },
                 default: '',
                 displayOptions: {
                     show: {
@@ -89,7 +94,7 @@ export class SecretShare implements INodeType {
         const key = this.deriveKey(passphrase);
         const data = Buffer.from(payloadB64, 'base64');
         if (data.length < 12 + 16) {
-            throw new Error('Invalid payload');
+            throw new NodeOperationError(this.getNode(), new Error('Invalid payload'));
         }
         const iv = data.slice(0, 12);
         const authTag = data.slice(12, 28);
@@ -123,11 +128,11 @@ export class SecretShare implements INodeType {
                 }
             } catch (error) {
                 if (this.continueOnFail()) {
-                    items[itemIndex].json = { error: (error as Error).message } as any;
+                    items[itemIndex].json = { error: (error as Error).message };
                     continue;
                 }
-                if ((error as any).context) {
-                    (error as any).context.itemIndex = itemIndex;
+                if (error instanceof Error && (error as NodeOperationError).context) {
+                    (error as NodeOperationError).context.itemIndex = itemIndex;
                     throw error;
                 }
                 throw new NodeOperationError(this.getNode(), error as Error, { itemIndex });
